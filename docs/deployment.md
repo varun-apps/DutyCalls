@@ -53,6 +53,20 @@ wrangler pages project create dutycalls
 wrangler pages deploy dist --project-name=dutycalls
 ```
 
+### Option B (modern) — Workers + Static Assets (`wrangler deploy`)
+
+Cloudflare is consolidating Pages into **Workers + Static Assets**. The repo ships a
+`wrangler.toml` that binds `./dist` with SPA fallback, so a single command deploys:
+
+```bash
+npm run build          # .env.local injects VITE_* at build time
+npx wrangler deploy    # reads wrangler.toml → uploads dist as static assets
+```
+
+The CLI shorthand `npx wrangler deploy --assets ./dist` also works, but the
+`wrangler.toml` is what sets `not_found_handling = "single-page-application"` for SPA
+fallback (see *SPA routing* below).
+
 ## After the first deploy: configure Supabase
 
 1. **Redirect URLs** — Supabase Dashboard → *Authentication → URL Configuration*:
@@ -68,10 +82,18 @@ wrangler pages deploy dist --project-name=dutycalls
 
 ## SPA routing
 
-`public/_redirects` contains `/* /index.html 200` so any non-file path serves the
-app shell. Static assets (`/sw.js`, `/manifest.webmanifest`, `/assets/*`) are
-served directly by Cloudflare and are unaffected. (DutyCalls currently uses
-state-based navigation, so this is future-proofing for when real routes are added.)
+DutyCalls is a single-page app, so any non-file path should serve the app shell.
+Two equivalent mechanisms are included, depending on the deploy path you choose:
+
+- **Workers Static Assets** (`wrangler deploy`, recommended): `not_found_handling =
+  "single-page-application"` in `wrangler.toml` serves `index.html` (200) for any
+  path that isn't a real static file.
+- **Cloudflare Pages** (`wrangler pages deploy` or Git integration): `public/_redirects`
+  with `/* /index.html 200`.
+
+Real static assets (`/sw.js`, `/manifest.webmanifest`, `/assets/*`) are served directly
+and are unaffected by either. (DutyCalls currently uses state-based navigation, so this
+is mostly future-proofing for when real URL routes are added.)
 
 ## Custom domain (free)
 

@@ -1,0 +1,15 @@
+# Cloudflare Workers + Static Assets config for DutyCalls.
+# Deploy with:  npm run build && npx wrangler deploy
+# (reads this file; the CLI shorthand `npx wrangler deploy --assets ./dist` also works
+#  but the config below is what enables SPA fallback.)
+name = "dutycalls"
+compatibility_date = "2026-08-11"
+
+[assets]
+# Vite's production build output.
+directory = "./dist"
+# SPA fallback: serve index.html (200) for any path that isn't a real static file.
+# This is the Workers Static Assets equivalent of Pages' "_redirects" rule
+# "/* /index.html 200". Real files (/sw.js, /manifest.webmanifest, /assets/*) are
+# served directly and are unaffected.
+not_found_handling = "single-page-application"
