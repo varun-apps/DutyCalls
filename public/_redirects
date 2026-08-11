@@ -1,0 +1,5 @@
+# SPA fallback for Cloudflare Pages / Netlify.
+# Any path that is not a real static file is served the app shell (index.html)
+# with a 200 so client-side navigation works. Real files like /sw.js,
+# /manifest.webmanifest, and /assets/* are served directly and are unaffected.
+/*    /index.html   200
