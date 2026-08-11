@@ -96,12 +96,6 @@ Put the **public** key in `.env.local` as `VITE_VAPID_PUBLIC_KEY`. Deploy the
 | `npm run icons` | Regenerate PWA icons from `public/icon.svg` |
 | `npm run supabase:types` | Generate `src/types/database.types.ts` from the linked project |
 
-## Security notes
-
-- The **anon key** is public by design — all data access is gated by RLS policies.
-- The **service-role key bypasses RLS** and is **never** shipped to the client; it only
-  exists as a Supabase Edge Function secret (`supabase secrets set`).
-- Never commit `.env.local`. Only `.env.example` (placeholders) is version-controlled.
 
 ## License
 
