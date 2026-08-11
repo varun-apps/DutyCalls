@@ -6,6 +6,9 @@
   "description": "DutyCalls — a shared daily todo list PWA for families and teams",
   "license": "MIT",
   "author": "Varun Arya",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
