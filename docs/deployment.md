@@ -83,13 +83,18 @@ fallback (see *SPA routing* below).
 ## SPA routing
 
 DutyCalls is a single-page app, so any non-file path should serve the app shell.
-Two equivalent mechanisms are included, depending on the deploy path you choose:
+**Use exactly one** mechanism, depending on the deploy path you choose:
 
 - **Workers Static Assets** (`wrangler deploy`, recommended): `not_found_handling =
   "single-page-application"` in `wrangler.toml` serves `index.html` (200) for any
-  path that isn't a real static file.
-- **Cloudflare Pages** (`wrangler pages deploy` or Git integration): `public/_redirects`
-  with `/* /index.html 200`.
+  path that isn't a real static file. **Do not ship a `_redirects` file on this path**
+  — Workers Static Assets also parses `_redirects`, and the `/* /index.html 200` rule
+  is rejected at deploy time with `Infinite loop detected ... [code: 100324]` because
+  the destination `/index.html` is canonicalised (`.html` stripped) back onto the
+  catch-all. The `not_found_handling` setting fully replaces it.
+- **Cloudflare Pages** (`wrangler pages deploy` or Git integration): a `public/_redirects`
+  file with `/* /index.html 200` is the Pages-native SPA fallback. (Removed from this
+  repo to keep the Workers path clean; re-create it if you switch to Pages.)
 
 Real static assets (`/sw.js`, `/manifest.webmanifest`, `/assets/*`) are served directly
 and are unaffected by either. (DutyCalls currently uses state-based navigation, so this
