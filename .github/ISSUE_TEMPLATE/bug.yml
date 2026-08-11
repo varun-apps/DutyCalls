@@ -1,0 +1,18 @@
+name: 🐛 Bug report
+description: Report something that's not working
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Steps to reproduce + expected vs actual.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser
+      placeholder: iPhone 14 Safari, Android Chrome, desktop Firefox…
+    validations:
+      required: true

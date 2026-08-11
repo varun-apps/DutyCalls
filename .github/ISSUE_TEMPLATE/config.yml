@@ -1,0 +1,4 @@
+contact_links:
+  - name: Security report
+    url: https://github.com/varun-apps/DutyCalls/security/policy
+    about: Report a security vulnerability privately.
