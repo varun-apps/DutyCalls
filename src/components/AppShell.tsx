@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarDays, LogOut, Users } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Loader2, LogOut, RefreshCw, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { DayView } from '@/components/DayView'
 import { GroupPanel } from '@/components/GroupPanel'
@@ -16,7 +16,12 @@ type Tab = 'day' | 'group'
 
 export function AppShell() {
   const { user, signOut } = useAuth()
-  const { data: groups, isLoading: groupsLoading } = useGroups(user?.id ?? null)
+  const {
+    data: groups,
+    isLoading: groupsLoading,
+    error: groupsError,
+    refetch: refetchGroups
+  } = useGroups(user?.id ?? null)
   const ensureGroup = useEnsureDefaultGroup()
   const acceptInvite = useAcceptInvite()
 
@@ -25,12 +30,17 @@ export function AppShell() {
   const [tab, setTab] = useState<Tab>('day')
   const [inviteMsg, setInviteMsg] = useState<string | null>(null)
 
-  // Ensure the user has at least one group on first login.
+  // Ensure the user has at least one group on first login. Only fire when the
+  // groups query has *successfully* loaded an empty list — never when it has
+  // errored (otherwise we'd hammer a failing RPC). Guarded by isPending and
+  // isError so we don't re-mutate while one is in flight or has already failed.
+  const groupsEmpty = groups?.length === 0
   useEffect(() => {
-    if (groups && groups.length === 0 && !ensureGroup.isPending) {
+    if (groupsEmpty && !ensureGroup.isPending && !ensureGroup.isError) {
       ensureGroup.mutate()
     }
-  }, [groups, ensureGroup])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupsEmpty, ensureGroup.isPending, ensureGroup.isError])
 
   // Select the first group once it's available.
   useEffect(() => {
@@ -121,14 +131,33 @@ export function AppShell() {
       <main className="mx-auto max-w-3xl px-4 py-6 safe-bottom">
         {groupsLoading ? (
           <p className="py-10 text-center text-sm text-slate-500">Loading…</p>
-        ) : !groupId ? (
-          <p className="py-10 text-center text-sm text-slate-500">
+        ) : groupId ? (
+          tab === 'day' ? (
+            <DayView groupId={groupId} date={date} onDateChange={setDate} />
+          ) : (
+            <GroupPanel groupId={groupId} />
+          )
+        ) : groupsError ? (
+          <SetupError
+            title="Couldn’t load your lists"
+            detail={(groupsError as Error).message}
+            actionLabel="Retry"
+            busy={groupsLoading}
+            onAction={() => void refetchGroups()}
+          />
+        ) : ensureGroup.isError ? (
+          <SetupError
+            title="Couldn’t set up your first list"
+            detail={(ensureGroup.error as Error)?.message ?? 'Unknown error'}
+            actionLabel="Retry setup"
+            busy={ensureGroup.isPending}
+            onAction={() => ensureGroup.mutate()}
+          />
+        ) : (
+          <p className="flex items-center justify-center gap-2 py-10 text-center text-sm text-slate-500">
+            <Loader2 className="h-4 w-4 animate-spin" />
             Setting up your first list…
           </p>
-        ) : tab === 'day' ? (
-          <DayView groupId={groupId} date={date} onDateChange={setDate} />
-        ) : (
-          <GroupPanel groupId={groupId} />
         )}
       </main>
     </div>
@@ -171,3 +200,42 @@ function Logo() {
     </svg>
   )
 }
+
+function SetupError({
+  title,
+  detail,
+  actionLabel,
+  busy,
+  onAction
+}: {
+  title: string
+  detail: string
+  actionLabel: string
+  busy: boolean
+  onAction: () => void
+}) {
+  return (
+    <div className="mx-auto max-w-md rounded-xl border border-red-500/30 bg-red-500/5 p-5 text-center">
+      <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-red-400" />
+      <p className="text-sm font-semibold text-red-200">{title}</p>
+      {detail && (
+        <p className="mt-1 break-words text-xs text-red-300/80">{detail}</p>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        className="mt-4"
+        disabled={busy}
+        onClick={onAction}
+      >
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <RefreshCw className="h-4 w-4" />
+        )}
+        {actionLabel}
+      </Button>
+    </div>
+  )
+}
+
