@@ -80,6 +80,21 @@ fallback (see *SPA routing* below).
 3. **Deploy the Edge Function** (Web Push): `supabase functions deploy notify-group`
    and set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` secrets.
 
+4. **Invite emails (Resend)**: deploy the Edge Function and set secrets so invites
+   are emailed to the invitee:
+
+   ```bash
+   supabase functions deploy send-invite
+   supabase secrets set \
+     RESEND_API_KEY=re_xxxxxxxxxxxxxxxxx \
+     RESEND_FROM="DutyCalls <invites@dutycalls.app>"   # or onboarding@resend.dev for testing
+   ```
+
+   `APP_URL` (already set for `notify-group`) is reused to build the accept link
+   (`${APP_URL}/?token=<token>`). In local dev, if `RESEND_API_KEY` is omitted the
+   function skips sending and still returns the invite link so the UI's "Copy link"
+   fallback works.
+
 ## SPA routing
 
 DutyCalls is a single-page app, so any non-file path should serve the app shell.

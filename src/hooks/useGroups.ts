@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
+import { supabase, functionBaseUrl } from '@/lib/supabase'
 import { qk } from '@/lib/queryClient'
 import type { Group, GroupMember, Invite } from '@/types/db'
 
@@ -104,9 +104,27 @@ export function useCreateInvite(groupId: string | null) {
         p_email: email
       })
       if (error) throw error
-      // Edge Function / Supabase Auth will deliver the email in production.
-      const { origin } = window.location
-      return { inviteId: data as string, link: `${origin}/invite?token=` }
+      // Ask the send-invite Edge Function to email the invitee a deep link.
+      // It reads the token server-side (service-role key) and sends the email
+      // via Resend. With no RESEND_API_KEY (local dev) it still returns the
+      // link so the UI's "Copy link" fallback keeps the flow working.
+      const { data: { session } } = await supabase.auth.getSession()
+      const sessionToken = session?.access_token
+      if (!sessionToken) throw new Error('Not signed in')
+      const res = await fetch(`${functionBaseUrl}/functions/v1/send-invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({ inviteId: data as string })
+      })
+      if (!res.ok) {
+        const msg = await res.text().catch(() => 'Failed to send invite email')
+        throw new Error(msg)
+      }
+      const { link } = (await res.json()) as { link: string }
+      return { link }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invites'] })

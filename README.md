@@ -36,7 +36,7 @@ See [`docs/adr/`](docs/adr/README.md) for the recorded decisions. In short:
 PWA (Vite + React + TanStack Query)
         │  supabase-js (HTTPS)
         ▼
-Supabase ── Postgres (RLS) · Auth · Realtime · Edge Functions (notify-group)
+Supabase ── Postgres (RLS) · Auth · Realtime · Edge Functions (notify-group, send-invite)
 ```
 
 - **Sharing model:** a *group* is the sharing boundary; membership + RLS enforce access.
@@ -84,6 +84,10 @@ supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=...
 
 Put the **public** key in `.env.local` as `VITE_VAPID_PUBLIC_KEY`. Deploy the
 `notify-group` Edge Function: `supabase functions deploy notify-group`.
+
+Invite emails are sent by the `send-invite` Edge Function via Resend: set
+`RESEND_API_KEY` and `RESEND_FROM`, then `supabase functions deploy send-invite`.
+In local dev without a key, the UI's "Copy link" fallback still works.
 
 ## Scripts
 

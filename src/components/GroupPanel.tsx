@@ -15,15 +15,22 @@ export function GroupPanel({ groupId }: GroupPanelProps) {
   const createInvite = useCreateInvite(groupId)
   const [email, setEmail] = useState('')
   const [lastSent, setLastSent] = useState<string | null>(null)
+  const [lastLink, setLastLink] = useState<string | null>(null)
 
   async function sendInvite(e: FormEvent) {
     e.preventDefault()
     const to = email.trim()
     if (!to) return
     setLastSent(null)
-    await createInvite.mutateAsync(to)
-    setLastSent(to)
-    setEmail('')
+    setLastLink(null)
+    try {
+      const { link } = await createInvite.mutateAsync(to)
+      setLastSent(to)
+      setLastLink(link ?? null)
+      setEmail('')
+    } catch {
+      // surfaced via createInvite.isError below
+    }
   }
 
   return (
@@ -76,9 +83,20 @@ export function GroupPanel({ groupId }: GroupPanelProps) {
           </Button>
         </form>
         {lastSent && (
-          <p className="mt-2 flex items-center gap-1 text-sm text-emerald-400">
-            <Check className="h-4 w-4" /> Invite sent to {lastSent}.
-          </p>
+          <div className="mt-2 space-y-1.5">
+            <p className="flex items-center gap-1 text-sm text-emerald-400">
+              <Check className="h-4 w-4" /> Invite email sent to {lastSent}.
+            </p>
+            {lastLink && (
+              <button
+                type="button"
+                onClick={() => copyToClipboard(lastLink)}
+                className="text-xs text-slate-400 underline hover:text-slate-200"
+              >
+                Copy invite link instead
+              </button>
+            )}
+          </div>
         )}
         {createInvite.isError && (
           <p className="mt-2 text-sm text-red-400">
@@ -96,10 +114,21 @@ export function GroupPanel({ groupId }: GroupPanelProps) {
               .map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center justify-between rounded-lg bg-slate-900/60 px-3 py-2 text-sm"
+                  className="flex items-center justify-between gap-2 rounded-lg bg-slate-900/60 px-3 py-2 text-sm"
                 >
-                  <span className="text-slate-300">{i.email}</span>
-                  <Badge className="bg-slate-700 text-slate-300 ring-slate-600">Pending</Badge>
+                  <span className="truncate text-slate-300">{i.email}</span>
+                  <span className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        copyToClipboard(`${window.location.origin}/?token=${i.token}`)
+                      }
+                      className="text-xs text-slate-400 underline hover:text-slate-200"
+                    >
+                      Copy link
+                    </button>
+                    <Badge className="bg-slate-700 text-slate-300 ring-slate-600">Pending</Badge>
+                  </span>
                 </li>
               ))}
           </ul>
@@ -107,4 +136,12 @@ export function GroupPanel({ groupId }: GroupPanelProps) {
       )}
     </aside>
   )
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
+    // clipboard may be unavailable (non-secure context); ignore.
+  }
 }
