@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CalendarDays, Loader2, LogOut, RefreshCw, Users } from 'lucide-react'
+import { AlertTriangle, Bell, BellOff, BellRing, CalendarDays, Loader2, LogOut, RefreshCw, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { DayView } from '@/components/DayView'
 import { GroupPanel } from '@/components/GroupPanel'
@@ -9,6 +9,7 @@ import {
   useEnsureDefaultGroup,
   useGroups
 } from '@/hooks/useGroups'
+import { usePushNotifications } from '@/hooks/usePush'
 import { useTasksRealtime } from '@/hooks/useTasks'
 import { cn } from '@/lib/utils'
 
@@ -24,6 +25,7 @@ export function AppShell() {
   } = useGroups(user?.id ?? null)
   const ensureGroup = useEnsureDefaultGroup()
   const acceptInvite = useAcceptInvite()
+  const push = usePushNotifications(!!user)
 
   const [groupId, setGroupId] = useState<string | null>(null)
   const [date, setDate] = useState<Date>(() => new Date())
@@ -79,6 +81,41 @@ export function AppShell() {
             <p className="text-sm font-semibold">DutyCalls</p>
             <p className="truncate text-xs text-slate-400">{user?.email}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => void push.subscribe()}
+            disabled={
+              !push.supported ||
+              push.busy ||
+              push.permission === 'denied' ||
+              push.permission === 'granted'
+            }
+            aria-label={
+              push.permission === 'granted'
+                ? 'Notifications enabled'
+                : push.permission === 'denied'
+                  ? 'Notifications blocked'
+                  : 'Enable notifications'
+            }
+            title={
+              push.permission === 'granted'
+                ? 'Notifications enabled'
+                : push.permission === 'denied'
+                  ? 'Notifications blocked — enable in browser settings'
+                  : 'Enable push notifications'
+            }
+          >
+            {push.busy ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : push.permission === 'granted' ? (
+              <BellRing className="h-5 w-5 text-emerald-400" />
+            ) : push.permission === 'denied' ? (
+              <BellOff className="h-5 w-5 text-slate-600" />
+            ) : (
+              <Bell className="h-5 w-5" />
+            )}
+          </Button>
           <Button
             variant="ghost"
             size="icon"

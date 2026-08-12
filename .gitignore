@@ -21,6 +21,9 @@ supabase/.branches
 supabase/.temp
 supabase/.env
 
+# Cloudflare Wrangler
+.wrangler
+
 # Logs
 *.log
 npm-debug.log*
