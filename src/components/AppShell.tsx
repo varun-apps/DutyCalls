@@ -55,7 +55,10 @@ export function AppShell() {
     const token = params.get('token')
     if (!token) return
     acceptInvite.mutate(token, {
-      onSuccess: () => setInviteMsg('You joined the shared list!'),
+      onSuccess: (joinedGroupId) => {
+        setGroupId(joinedGroupId)
+        setInviteMsg('You joined the shared list!')
+      },
       onError: (e) => setInviteMsg(`Invite failed: ${(e as Error).message}`)
     })
     window.history.replaceState({}, '', window.location.pathname)
